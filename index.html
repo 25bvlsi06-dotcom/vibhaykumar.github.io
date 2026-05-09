@@ -396,11 +396,11 @@ footer { background:#080502; padding:2rem 4rem; display:flex; justify-content:sp
 <div class="section-wrap">
   <div class="section-tag reveal">// Social Profiles</div>
   <h2 class="section-heading reveal">My Online Presence</h2>
-  <p class="socials-intro reveal">All profiles auto-refresh with AI-powered insights every time you visit. Click any card to visit the platform.</p>
+  <p class="socials-intro reveal">Explore my profiles across platforms. GitHub stats are fetched live. Click any card to visit the platform.</p>
 
   <div class="ai-banner reveal">
     <div class="ai-dot" id="ai-dot"></div>
-    <span id="ai-status-text">Loading AI-powered profile summaries...</span>
+    <span id="ai-status-text">Profiles loaded</span>
   </div>
 
   <div class="profiles-grid" id="profiles-grid">
@@ -483,7 +483,7 @@ footer { background:#080502; padding:2rem 4rem; display:flex; justify-content:sp
 
   <div class="ai-caption reveal">
     <span class="ai-sparkle">✦</span>
-    <span id="ai-caption-text">Profile descriptions powered by Claude AI · GitHub stats fetched live · Other stats updated periodically</span>
+    <span id="ai-caption-text">Profile descriptions cached locally · GitHub stats fetched live · No external AI calls</span>
   </div>
 </div>
 </section>
@@ -655,62 +655,26 @@ async function fetchGitHubStats() {
   } catch { document.getElementById('gh-repos').textContent = 'Visit'; document.getElementById('gh-stars').textContent = '→'; }
 }
 
-/* ── AI-powered social descriptions via Claude API ── */
-async function fetchAIDescriptions() {
+/* ── Set profile descriptions (pre-generated, no API calls needed) ──
+   Security fix: removed live Claude API call that exposed the API key
+   in client-side JavaScript. Descriptions are now hardcoded. ── */
+function setProfileDescriptions() {
+  const descriptions = {
+    youtube: "Breaking down VLSI design, digital electronics, and semiconductor concepts for engineering students worldwide.",
+    linkedin: "B.Tech Electronics student | VLSI Design researcher | IMU CET #3395 | Building semiconductor expertise.",
+    instagram: "Engineering journey, VLSI concepts, and behind-the-scenes of chip design education.",
+    github: "VLSI projects, circuit simulations, digital design code, and semiconductor research implementations."
+  };
+
+  document.getElementById('yt-desc').textContent = descriptions.youtube;
+  document.getElementById('li-desc').textContent = descriptions.linkedin;
+  document.getElementById('ig-desc').textContent = descriptions.instagram;
+  document.getElementById('gh-desc').textContent = descriptions.github;
+
   const dot = document.getElementById('ai-dot');
-  const statusText = document.getElementById('ai-status-text');
-  dot.className = 'ai-dot'; // pulsing gold
-  statusText.textContent = 'AI generating profile insights...';
-
-  try {
-    const response = await fetch('https://api.anthropic.com/v1/messages', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        model: 'claude-sonnet-4-20250514',
-        max_tokens: 1000,
-        messages: [{
-          role: 'user',
-          content: `You are writing profile descriptions for Vibhay Kumar's portfolio website. He is a B.Tech first-year Electronics Engineering student (VLSI Design & Technology) at Centre for Advanced Studies, AKTU, Lucknow. He has:
-- YouTube channel "VLSI with Nano Node" (@VLSIwithNanoNode) - teaches VLSI concepts
-- LinkedIn profile for professional networking in VLSI/semiconductor field
-- Instagram @vibhaykumar_84 - personal/engineering lifestyle
-- GitHub 25bvlsi06-dotcom - VLSI and electronics code projects
-- IMU CET rank #3395
-- Research paper accepted at ICISSE 2026 (TMU)
-- Career goal: join top semiconductor company (Qualcomm, Intel, MediaTek, etc.)
-
-Write 4 SHORT, punchy, inspiring descriptions (2 sentences each) for each social profile. Be specific, energetic, and relevant to VLSI/engineering.
-
-Respond ONLY with valid JSON, no markdown, no backticks:
-{"youtube":"...","linkedin":"...","instagram":"...","github":"..."}`
-        }]
-      })
-    });
-
-    if (!response.ok) throw new Error('API error');
-    const data = await response.json();
-    const text = data.content.find(b => b.type === 'text')?.text || '';
-    
-    let parsed;
-    try { parsed = JSON.parse(text.replace(/```json|```/g,'').trim()); }
-    catch { throw new Error('Parse error'); }
-
-    if (parsed.youtube) document.getElementById('yt-desc').textContent = parsed.youtube;
-    if (parsed.linkedin) document.getElementById('li-desc').textContent = parsed.linkedin;
-    if (parsed.instagram) document.getElementById('ig-desc').textContent = parsed.instagram;
-    if (parsed.github) document.getElementById('gh-desc').textContent = parsed.github;
-
-    dot.style.background = '#4caf50';
-    dot.style.animation = 'pulse 2s infinite';
-    statusText.textContent = 'Profile insights powered by Claude AI · Updated just now';
-    document.getElementById('ai-caption-text').textContent = 'Descriptions generated by Claude AI on ' + new Date().toLocaleDateString('en-IN', {day:'numeric',month:'long',year:'numeric'});
-
-  } catch (err) {
-    dot.style.background = 'var(--clay)';
-    dot.style.animation = 'none';
-    statusText.textContent = 'Profile descriptions loaded · GitHub stats fetched live';
-  }
+  dot.style.background = '#4caf50';
+  dot.style.animation = 'pulse 2s infinite';
+  document.getElementById('ai-status-text').textContent = 'Profiles loaded';
 }
 
 /* ── Display placeholder stats (YouTube/LinkedIn/Instagram require OAuth) ── */
@@ -729,7 +693,7 @@ function setPlaceholderStats() {
 /* ── Init ── */
 setPlaceholderStats();
 fetchGitHubStats();
-fetchAIDescriptions();
+setProfileDescriptions();
 
 // Re-fetch GitHub stats every 5 minutes
 setInterval(fetchGitHubStats, 5 * 60 * 1000);
